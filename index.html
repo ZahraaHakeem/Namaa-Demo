@@ -2,36 +2,77 @@
 <html>
 <head>
 <title>Namaa Demo</title>
+
+<style>
+body {
+    text-align: center;
+    font-family: Arial;
+    background: #f5f7fa;
+    padding: 40px;
+}
+
+.container {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    width: 350px;
+    margin: auto;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+button {
+    padding: 10px 20px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #45a049;
+}
+
+#result {
+    margin-top: 20px;
+    font-weight: bold;
+}
+</style>
+
 </head>
 
-<body style="text-align:center; font-family:Arial;">
+<body>
 
-<h2>🌱🌱 Namaa System</h2>
+<div class="container">
+    <h2>🌱 Namaa System</h2>
 
-<input type="file" id="image"><br><br>
-<input type="number" id="age" placeholder="Enter age"><br><br>
+    <input type="file" id="image"><br><br>
+    <input type="number" id="age" placeholder="Enter age"><br><br>
 
-<button onclick="send()">Predict</button>
+    <button onclick="send()">Predict</button>
 
-<p id="result"></p>
+    <p id="result">Result will appear here</p>
+</div>
 
 <script>
 async function send() {
+
     const file = document.getElementById("image").files[0];
     const age = document.getElementById("age").value;
 
     if (!file || !age) {
-        alert("Upload image + enter age");
+        alert("Please upload image and enter age");
         return;
     }
 
-    document.getElementById("result").innerText = "⏳⏳ Processing...";
+    document.getElementById("result").innerText = "⏳ Processing...";
 
     // تحويل الصورة إلى base64
     const reader = new FileReader();
     reader.readAsDataURL(file);
 
     reader.onload = async () => {
+
         const base64Image = reader.result;
 
         try {
@@ -51,14 +92,25 @@ async function send() {
                 }
             );
 
+            console.log("Status:", response.status);
+
+            if (!response.ok) {
+                throw new Error("Server error: " + response.status);
+            }
+
             const data = await response.json();
+
+            console.log("Response:", data);
 
             document.getElementById("result").innerText =
                 "✅ Result: " + JSON.stringify(data);
 
         } catch (error) {
+            console.error(error);
+
             document.getElementById("result").innerText =
-                "❌ Error connecting to API";
+                "❌ Error: " + error.message + 
+                " (قد يكون المودل يحتاج وقت للتشغيل)";
         }
     };
 }
