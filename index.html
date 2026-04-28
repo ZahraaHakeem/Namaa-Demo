@@ -29,10 +29,6 @@ button {
     cursor: pointer;
 }
 
-button:hover {
-    background: #45a049;
-}
-
 #result {
     margin-top: 20px;
     font-weight: bold;
@@ -46,7 +42,9 @@ button:hover {
 <div class="container">
     <h2>🌱 Namaa System</h2>
 
-    <input type="file" id="image"><br><br>
+    <!-- 👇 السماح باختيار عدة صور -->
+    <input type="file" id="images" multiple><br><br>
+
     <input type="number" id="age" placeholder="Enter age"><br><br>
 
     <button onclick="send()">Predict</button>
@@ -57,62 +55,70 @@ button:hover {
 <script>
 async function send() {
 
-    const file = document.getElementById("image").files[0];
+    const files = document.getElementById("images").files;
     const age = document.getElementById("age").value;
 
-    if (!file || !age) {
-        alert("Please upload image and enter age");
+    if (files.length === 0 || !age) {
+        alert("Upload images + enter age");
+        return;
+    }
+
+    if (files.length !== 3) {
+        alert("Please upload exactly 3 images");
         return;
     }
 
     document.getElementById("result").innerText = "⏳ Processing...";
 
-    // تحويل الصورة إلى base64
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
+    try {
+        // تحويل الصور إلى base64
+        const base64Images = await Promise.all(
+            Array.from(files).map(file => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
 
-    reader.onload = async () => {
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = error => reject(error);
+                });
+            })
+        );
 
-        const base64Image = reader.result;
-
-        try {
-            const response = await fetch(
-                "https://salma112003-nutriscreener-demo.hf.space/api/predict",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        data: [
-                            [base64Image],   // images
-                            Number(age)      // age
-                        ]
-                    })
-                }
-            );
-
-            console.log("Status:", response.status);
-
-            if (!response.ok) {
-                throw new Error("Server error: " + response.status);
+        const response = await fetch(
+            "https://salma112003-nutriscreener-demo.hf.space/api/predict",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    data: [
+                        base64Images,   // 👈 هنا 3 صور
+                        Number(age)
+                    ]
+                })
             }
+        );
 
-            const data = await response.json();
+        console.log("Status:", response.status);
 
-            console.log("Response:", data);
-
-            document.getElementById("result").innerText =
-                "✅ Result: " + JSON.stringify(data);
-
-        } catch (error) {
-            console.error(error);
-
-            document.getElementById("result").innerText =
-                "❌ Error: " + error.message + 
-                " (قد يكون المودل يحتاج وقت للتشغيل)";
+        if (!response.ok) {
+            throw new Error("Server error: " + response.status);
         }
-    };
+
+        const data = await response.json();
+
+        console.log("Response:", data);
+
+        document.getElementById("result").innerText =
+            "✅ Result: " + JSON.stringify(data);
+
+    } catch (error) {
+        console.error(error);
+
+        document.getElementById("result").innerText =
+            "❌ Error: " + error.message;
+    }
 }
 </script>
 
