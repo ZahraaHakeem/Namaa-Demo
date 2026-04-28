@@ -25,24 +25,42 @@ async function send() {
         return;
     }
 
-    const formData = new FormData();
-    formData.append("images", file);
-    formData.append("age", age);
+    document.getElementById("result").innerText = "⏳ Processing...";
 
-    document.getElementById("result").innerText = "Processing...";
+    // تحويل الصورة إلى base64
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
 
-    const response = await fetch(
-        "https://salma112003-nutriscreener-demo.hf.space/api/predict",
-        {
-            method: "POST",
-            body: formData
+    reader.onload = async () => {
+        const base64Image = reader.result;
+
+        try {
+            const response = await fetch(
+                "https://salma112003-nutriscreener-demo.hf.space/api/predict",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        data: [
+                            [base64Image],   // images
+                            Number(age)      // age
+                        ]
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            document.getElementById("result").innerText =
+                "✅ Result: " + JSON.stringify(data);
+
+        } catch (error) {
+            document.getElementById("result").innerText =
+                "❌ Error connecting to API";
         }
-    );
-
-    const data = await response.json();
-
-    document.getElementById("result").innerText =
-        JSON.stringify(data);
+    };
 }
 </script>
 
